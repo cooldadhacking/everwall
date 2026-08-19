@@ -1,0 +1,15 @@
+# Rust build artifacts
+/target
+
+# devenv / direnv
+.devenv/
+.direnv/
+devenv.local.nix
+
+# OS / editor
+.DS_Store
+*.swp
+*~
+.idea/
+.vscode/
+
