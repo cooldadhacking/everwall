@@ -11,7 +11,7 @@ use image::RgbaImage;
 use rayon::prelude::*;
 
 use crate::color::{Oklab, oklab_to_srgb, srgb_to_oklab};
-use crate::palette::Palette;
+use crate::palette::{Group, Palette};
 
 /// Tunable knobs for a recolor pass.
 #[derive(Clone, Copy, Debug)]
@@ -66,15 +66,31 @@ fn map_color(
     shape: f32,
     preserve_luminance: bool,
 ) -> [u8; 3] {
-    // Distance from the source to every palette color.
-    let mut dists: Vec<(f32, usize)> = palette
-        .colors
-        .iter()
-        .enumerate()
-        .map(|(i, c)| (src.dist_sq(&c.oklab), i))
-        .collect();
+    // Distance from the source to every palette color, but the background ramp
+    // is admitted only once. The ramp is seven near-neutral tones separated
+    // almost purely by lightness, so for any dark pixel it occupies the entire
+    // neighbor set and the accents never get a vote -- greens came out mauve.
+    // Keeping just its closest member preserves the ramp's role as a lightness
+    // reference while leaving the remaining slots for chromatic anchors.
+    let mut dists: Vec<(f32, usize)> = Vec::with_capacity(palette.colors.len());
+    let mut best_ramp: Option<(f32, usize)> = None;
+    for (i, c) in palette.colors.iter().enumerate() {
+        let d2 = src.dist_sq(&c.oklab);
+        match c.group {
+            Group::Ramp => {
+                if best_ramp.is_none_or(|(bd, _)| d2 < bd) {
+                    best_ramp = Some((d2, i));
+                }
+            }
+            Group::Accent => dists.push((d2, i)),
+        }
+    }
+    if let Some(r) = best_ramp {
+        dists.push(r);
+    }
 
-    // Partial sort: we only need the `nearest` closest.
+    // Partial sort: we only need the `nearest` closest of what survived.
+    let nearest = nearest.min(dists.len());
     dists.select_nth_unstable_by(nearest - 1, |a, b| a.0.total_cmp(&b.0));
     let chosen = &dists[..nearest];
 

@@ -134,12 +134,17 @@ impl Variant {
     pub fn palette(self, rich: bool) -> Palette {
         let [bg, fg, tint] = self.hex_groups();
         let mut colors = Vec::new();
-        let groups: &[&[&str]] = if rich { &[bg, fg, tint] } else { &[bg, fg] };
-        for set in groups {
+        let groups: &[(&[&str], Group)] = if rich {
+            &[(bg, Group::Ramp), (fg, Group::Accent), (tint, Group::Accent)]
+        } else {
+            &[(bg, Group::Ramp), (fg, Group::Accent)]
+        };
+        for (set, group) in groups {
             for hex in *set {
                 let rgb = parse_hex(hex).expect("palette hex constants are valid");
                 colors.push(PaletteColor {
                     oklab: srgb_to_oklab(rgb),
+                    group: *group,
                 });
             }
         }
@@ -150,10 +155,28 @@ impl Variant {
     }
 }
 
+/// Which structural group an anchor belongs to.
+///
+/// The background ramp is a lightness ladder of seven near-identical,
+/// near-neutral tones. Because Oklab distance is dominated by lightness, a dark
+/// pixel's nearest neighbors are *all* ramp entries — the chromatic accents
+/// never enter the vote at all, and the blend collapses to neutral. That is
+/// what dragged green foliage to mauve. Tagging the ramp lets the recolor pass
+/// admit only its single nearest member per pixel, so the ramp still supplies
+/// lightness without crowding out the accents.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Group {
+    /// The neutral background ramp (bg_dim … bg5).
+    Ramp,
+    /// Foreground, the accents, and the opt-in muted tints.
+    Accent,
+}
+
 /// One palette entry, stored as its precomputed Oklab coordinates.
 #[derive(Clone, Copy, Debug)]
 pub struct PaletteColor {
     pub oklab: Oklab,
+    pub group: Group,
 }
 
 /// A fully resolved palette ready for recoloring.

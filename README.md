@@ -9,6 +9,43 @@ uses). Blending the nearest few anchors, rather than snapping to one, keeps
 smooth gradients smooth instead of banding into flat posterized blocks, while
 still pulling the whole image onto the theme.
 
+## Examples
+
+Source photos from [Unsplash](https://unsplash.com), recolored with the commands
+shown. All credit to the photographers.
+
+### `dark-medium`
+
+| Original | `everwall cat.jpg` | `everwall cat.jpg -L` |
+|---|---|---|
+| ![](examples/cat-original.jpg) | ![](examples/cat-dark-medium.jpg) | ![](examples/cat-dark-medium-preserve-luminance.jpg) |
+
+Photo by [Madalyn Cox](https://unsplash.com/photos/ZxChxgJa6X0) on Unsplash.
+`--preserve-luminance` (right) keeps the original contrast and fine detail,
+letting the palette drive only hue and chroma — usually the better choice for
+photographs.
+
+### `dark-hard`
+
+| Original | `everwall berries.jpg -p dark-hard` |
+|---|---|
+| ![](examples/berries-original.jpg) | ![](examples/berries-dark-hard.jpg) |
+
+Photo by [Clint McKoy](https://unsplash.com/photos/h28p96ICizo) on Unsplash.
+
+### `light-soft`
+
+| Original | `everwall kitten.jpg -p light-soft` |
+|---|---|
+| ![](examples/kitten-original.jpg) | ![](examples/kitten-light-soft.jpg) |
+
+Photo by [Paul Hanaoka](https://unsplash.com/photos/LcAZcVWsCIo) on Unsplash.
+
+Note that Everforest's dark background ramp is itself near-neutral, so deeply
+shadowed regions land on those page tones rather than on a saturated accent.
+That is the theme's own character, not a lossy conversion — `--preserve-luminance`
+is the knob that keeps such areas legible.
+
 ## Setup
 
 This project uses [devenv](https://devenv.sh) + [direnv](https://direnv.net).
